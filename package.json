@@ -1,0 +1,30 @@
+{
+  "name": "grunt-tools",
+  "version": "1.0.0",
+  "description": "Helper Tools for Grunt",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WolfLabs/grunt-tools"
+  },
+  "keywords": [
+    "grunt",
+    "config",
+    "tools"
+  ],
+  "author": "Michal Kluszewski",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/WolfLabs/grunt-configurator/issues"
+  },
+  "homepage": "https://github.com/WolfLabs/grunt-configurator#readme",
+  "peerDependencies": {
+    "grunt": "*"
+  },
+  "devDependencies": {
+    "jest": "^20.0.4"
+  }
+}
