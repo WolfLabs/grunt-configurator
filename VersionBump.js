@@ -8,14 +8,19 @@ const fs = require('fs'),
 
 class VersionBump {
 
-    constructor(gc) {
+    constructor(gc, type, pkg, packagePath, buildJsonPath) {
         this.__gc = gc;
         this.__type = type;
         this.__pkg = pkg;
         this.__packagePath = packagePath;
         this.__buildJsonPath = buildJsonPath;
         gc.addTask(true, 'version-bump', () => {
-            this.run();
+            try {
+                this.run();
+            } catch (e) {
+                console.error(e.stack);
+                throw e;
+            }
         });
     }
 
@@ -23,9 +28,9 @@ class VersionBump {
     get type() { return this.__type; }
     get pkg() { return this.__pkg; }
     get packagePath() { return this.__packagePath; }
-    get rc() { return !!gc.grunt.option('rc'); }
-    get bump() { return !!gc.grunt.option('bump'); }
-    get noBump() { return !!gc.grunt.option('no-bump'); }
+    get rc() { return !!this.gc.grunt.option('rc'); }
+    get bump() { return !!this.gc.grunt.option('bump'); }
+    get noBump() { return !!this.gc.grunt.option('no-bump'); }
     get buildJsonPath() { return this.__buildJsonPath; }
 
     versionObj(major, minor, hotfix, rc) {
@@ -97,13 +102,17 @@ class VersionBump {
         const version = this.bumpVersion();
         this.gc.grunt.log.write(`Writing new version ${version} `);
         try {
+            this.pkg.version = version;
+            console.info('write', this.packagePath, JSON.stringify(this.pkg, null, '    '));
             fs.writeFileSync(this.packagePath, JSON.stringify(this.pkg, null, '    '));
             this.gc.grunt.log.ok();
         } catch (error) {
             this.gc.grunt.verbose.error(`Error writing package.json: ${error.stack}`);
             this.gc.grunt.fail.fatal(`Error writing package.json: ${error.message}`);
         }
-        this.constructor.writeBuildJSON(this.gc, this.buildJsonPath, version);
+        if (this.buildJsonPath) {
+            this.constructor.writeBuildJSON(this.gc, this.buildJsonPath, version);
+        }
     }
 
     static writeBuildJSON(gc, buildJsonPath, version) {
@@ -117,17 +126,18 @@ class VersionBump {
                 }
                 build.version = version;
                 build.releaseDate = moment().format('YYYY-MM-DD HH:mm:ss');
-                fs.writeFileSync(this.buildJsonPath, JSON.stringify(build));
+                fs.writeFileSync(buildJsonPath, JSON.stringify(build, null, '    '));
             }
         } catch (error) {
-            gc.grunt.verbose.error(`Error writing package.json: ${error.stack}`);
-            gc.grunt.fail.fatal(`Error writing package.json: ${error.message}`);
+            gc.grunt.verbose.error(`Error writing ${buildJsonPath}: ${error.stack}`);
+            gc.grunt.fail.fatal(`Error writing ${buildJsonPath}: ${error.stack}`);
         }
     }
 
     static init(gc, packagePath, buildJsonPath) {
         try {
-            const rt = gc.grunt.option('release-type');
+            console.info('buildJsonPath', buildJsonPath);
+            const rt = gc.option('versionBump') && gc.releaseMode && gc.grunt.option('release-type');
             if (rt) {
                 switch (rt) {
                     case 'major' :
@@ -139,6 +149,8 @@ class VersionBump {
                     default : 
                         throw new Error(`Unsupported version-type, expected major, minor or hotfix.`);
                 }
+            } else if (buildJsonPath) {
+                return (gc.releaseMode ? this.buildJSONProd(gc, packagePath, buildJsonPath) : this.buildJSONDev(gc, buildJsonPath));
             }
         } catch (error) {
             gc.grunt.verbose.error(`Error initializing version-bump: ${error.stack}`);
@@ -146,10 +158,18 @@ class VersionBump {
         }
     }
 
-    static buildJSONDeb(gc, buildJsonPath) {
+    static buildJSONDev(gc, buildJsonPath) {
         if (buildJsonPath) {
             gc.addTask(true, 'build-json-dev', () => {
+                this.writeBuildJSON(gc, buildJsonPath, `dev-${Date.now()}`);
+            });
+        }
+    }
 
+    static buildJSONProd(gc, packagePath, buildJsonPath) {
+        if (packagePath && buildJsonPath && fs.existsSync(packagePath)) {
+            gc.addTask(true, 'build-json-prod', () => {
+                this.writeBuildJSON(gc, buildJsonPath, require(packagePath).version);
             });
         }
     }

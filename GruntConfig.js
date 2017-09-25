@@ -6,12 +6,15 @@
 const fs = require('fs'),
     path = require('path'),
     resolvePath = (p) => {
+        if (typeof p != 'string') {
+            return p;
+        }
         if (p.substr(0, 1) == '/') {
             return p;
         }
         return path.normalize(path.join(process.cwd(), p));
     },
-    versionBump = require('./VersionBump');
+    VersionBump = require('./VersionBump');
 
 /**
  * @class GruntConfig
@@ -33,11 +36,10 @@ class GruntConfig {
             jobs: 'jobs',
             noEnvChange: false,
             versionBump: true,
-            packagePath: 'package.json',
+            packagePath:'package.json',
             buildJson: null,
             disableWatch: false,
-            buildJsonPath: null,
-            packagePath: 'package.json'
+            buildJsonPath: null
         }, options || {});
         this.__grunt = grunt;
         this.__config = {};
@@ -53,13 +55,11 @@ class GruntConfig {
         this.__jobs = resolvePath(this.option('jobs'));
         this.__pkgPath = this.option('packagePath') ? resolvePath(this.option('packagePath')) : null;
 
-        if (!config.noEnvChange && this.releaseMode) {
+        if (!this.option('noEnvChange') && this.releaseMode) {
             process.env.NODE_ENV = 'production';
         }
 
-        if (config.versionBump && this.releaseMode) {
-            VersionBump.init(this, resolvePath(config.packagePath));
-        }
+        VersionBump.init(this, this.pkgPath, resolvePath(this.option('buildJson')));
     }
 
     option(name, defaultValue) {
@@ -217,9 +217,6 @@ class GruntConfig {
      * @method initGrunt
      */
     initGrunt() {
-        require('matchdep')
-            .filterAll('grunt-*')
-            .forEach(this.grunt.loadNpmTasks);
         let addWatch = false;
         if (this.watchEnabled && this.__watchPaths.length && this.__defaultTasks.length) {
             this.__watchPaths.forEach(([files, tasks], index) => {

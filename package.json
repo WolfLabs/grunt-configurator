@@ -26,5 +26,8 @@
   },
   "devDependencies": {
     "jest": "^20.0.4"
+  },
+  "dependencies": {
+    "moment": "^2.18.1"
   }
 }
