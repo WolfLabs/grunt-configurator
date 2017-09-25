@@ -15,12 +15,7 @@ class VersionBump {
         this.__packagePath = packagePath;
         this.__buildJsonPath = buildJsonPath;
         gc.addTask(true, 'version-bump', () => {
-            try {
-                this.run();
-            } catch (e) {
-                console.error(e.stack);
-                throw e;
-            }
+            this.run();
         });
     }
 
@@ -103,7 +98,6 @@ class VersionBump {
         this.gc.grunt.log.write(`Writing new version ${version} `);
         try {
             this.pkg.version = version;
-            console.info('write', this.packagePath, JSON.stringify(this.pkg, null, '    '));
             fs.writeFileSync(this.packagePath, JSON.stringify(this.pkg, null, '    '));
             this.gc.grunt.log.ok();
         } catch (error) {
@@ -136,7 +130,6 @@ class VersionBump {
 
     static init(gc, packagePath, buildJsonPath) {
         try {
-            console.info('buildJsonPath', buildJsonPath);
             const rt = gc.option('versionBump') && gc.releaseMode && gc.grunt.option('release-type');
             if (rt) {
                 switch (rt) {
