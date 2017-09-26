@@ -113,7 +113,7 @@ class VersionBump {
         try {
             
             if (buildJsonPath) {
-                gc.grunt.log.write(`Writing build json `);
+                gc.grunt.log.write(`Writing ${buildJsonPath} `);
                 const build = {};
                 if (fs.existsSync(this.buildJsonPath)) {
                     Object.assign(build, require(this.buildJsonPath));
@@ -121,6 +121,7 @@ class VersionBump {
                 build.version = version;
                 build.releaseDate = moment().format('YYYY-MM-DD HH:mm:ss');
                 fs.writeFileSync(buildJsonPath, JSON.stringify(build, null, '    '));
+                gc.grunt.log.ok();
             }
         } catch (error) {
             gc.grunt.verbose.error(`Error writing ${buildJsonPath}: ${error.stack}`);
