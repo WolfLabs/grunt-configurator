@@ -154,6 +154,12 @@ class GruntConfig {
      */
     addWatchPaths(paths, tasks) {
         tasks = tasks || this.__recentTasks;
+        if (typeof (tasks) == 'string') {
+            tasks = [tasks];
+        }
+        if (typeof (paths) == 'string') {
+            paths = [paths];
+        }
         this.__watchPaths.push([paths, tasks]);
         this.__recentTasks = [];
     }
@@ -227,6 +233,7 @@ class GruntConfig {
                 addWatch = true;
             });
         }
+        //console.info(JSON.stringify(this.__config, null, 4));
         this.grunt.initConfig(this.__config);
         this.__tasks.forEach(args => this.grunt.registerTask(...args));
         if (this.__defaultTasks.length) {
